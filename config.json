@@ -2,5 +2,7 @@
 	"prefix": ".",
 	"token": "",
 	"qachannel": "questions_answers",
-	"bchannel": "bounce_answers"
+	"bchannel": "bounce_answers",
+	"QM" : "qm",
+	"sc": true	
 }

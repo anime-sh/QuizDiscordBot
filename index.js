@@ -199,6 +199,12 @@ client.on('message', message => {
 		else if(command === 'pounce') {
 			message.channel.send('Don\'t pounce here');
 		}
+		else if(command === 'reset') {
+			for(let i in scores) {
+				scores[i] = 0;
+			}
+			message.channel.send('Reset done');
+		}
 	}
 
 	else if(command === 'pounce') {
@@ -212,7 +218,12 @@ client.on('message', message => {
 			.setColor('#123452')
 			.setTitle('Theres a pounce here');
 		message.channel.send(pounclocal);
-		message.channel.send(message.guild.roles.cache.get('690122704107470901').members.first().user.toString());
+		// message.channel.send(message.guild.roles.cache.get('690122704107470901').members.first().user.toString());
+		const qmmap = message.guild.roles.cache.get('690122704107470901').members.map(m => m.user);
+		// eslint-disable-next-line no-var
+		for(var i in qmmap) {
+			message.channel.send(qmmap[i].toString());
+		}
 		// const mention = args[0].mentions;
 		// if(mention == null) {
 		// 	return;

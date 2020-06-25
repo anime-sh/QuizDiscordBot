@@ -24,9 +24,10 @@ Pouncing is also easy with this bot.
 .rules displays all the commands this bot has.
 
 .ping .there? and .test are fun commands used to test if the bot is online.
-Images used in these three commands have to be stores in the root folder of the bot.
+Images used in these three commands have to be stored in the root folder of the bot.
 
 How to use it in your own server?
+
 Okay so this is a very simple project and the way it has been designed means that it can function properly only if it is in one server at a time.
 So if you have a quizzing server and like the idea of having a bot which does all this, you could create your own bot (install node.js and discord.js generate bot token, set bot permissions and invite the bot to the server), copy this code and make relevant changes in the config.json and index,js files, your package.json file would be system generated anyway so dont copy that.
 
@@ -39,4 +40,5 @@ In order to tag the qms, the bot needs to know the roleid, insert the role id in
         const qmmap = message.guild.roles.cache.get('ROLE ID OF QM').members.map(m => m.user);
 
 Make sure the bot has permissions to read and send messages in all relevant channels (questions_answers, bounce_answers and the team channels)
+
 DO NOT USE THE SAME BOT WITH THE SAME TOKEN IN MORE THAN ONE SERVER

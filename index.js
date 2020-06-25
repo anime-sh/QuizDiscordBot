@@ -1,20 +1,30 @@
 const fs = require('fs');
+// require the discord.js module
 const Discord = require('discord.js');
+
+// require the config file
 const { prefix, token, qachannel, bchannel, QM, sc } = require('./config.json');
 const { ADDRCONFIG } = require('dns');
+
+// create a new Discord client
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
+
+// when the client is ready, run this code
+// this event will only trigger one time after logging in
 client.once('ready', () => {
 	console.log('Ready!');
 });
+// eslint-disable-next-line no-var
 var num = 1;
+// eslint-disable-next-line no-var
 var scores = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 client.on('message', message => {
 	if (!message.content.startsWith(prefix) || message.author.bot) return;
 	const args = message.content.slice(prefix.length).split(/ +/);
 	const command = args.shift().toLowerCase();
 	console.log(message.content);
-	
+	// message.channel.send('In channel ' + message.channel.name);
 	if(command === 'ping') {
 		const pingembed = new Discord.MessageEmbed()
 			.setColor('#00FFFF')
@@ -22,6 +32,56 @@ client.on('message', message => {
 			.attachFiles('./pong.png')
 			.setImage('attachment://pong.png');
 		message.channel.send(pingembed);
+	}
+	else if(command === 'rules') {
+		const ruleEmbed = {
+			color: 0x00FF00,
+			title: 'Score Board',
+			fields: [
+				{
+					name: '.add X',
+					value: 'Adds X points to your team',
+					inline: false,
+				},
+				{
+					name: '.show',
+					value: 'Displays the scoredboard',
+					inline: false,
+				},
+				{
+					name: '.reset',
+					value: 'Resets the scoredboard',
+					inline: false,
+				},
+				{
+					name: '.pounce',
+					value: 'Tags all the qms for you, and also messages the bounce answers channel  USE THIS TO INDICATE POUNCES',
+					inline: false,
+				},
+				{
+					name: '.nxts',
+					value: 'Uploads the next slide',
+					inline: false,
+				},
+				{
+					name: '.gtsn X',
+					value: 'Goes to slide number X',
+					inline: false,
+				},
+				{
+					name: '.gtdel X',
+					value: 'Moves ahead by X slides',
+					inline: false,
+				},
+				{
+					name: '.there? .ping and .test',
+					value: 'Random commands :)',
+					inline: false,
+				},
+			],
+			timestamp: new Date(),
+		};
+		message.channel.send({embed: ruleEmbed});
 	}
 	else if(command === 'there?') {
 		const pingembed = new Discord.MessageEmbed()
@@ -37,7 +97,7 @@ client.on('message', message => {
 		}
 	}
 	else if(command === 'test') {
-		message.channel.send({ files: ['./test.png'] });
+		message.channel.send({ files: ['./test.jpg'] });
 	}
 	else if(message.channel.name === qachannel) {
 		if(command === 'nxts') {
@@ -72,7 +132,7 @@ client.on('message', message => {
 	else if(message.channel.name === bchannel) {
 
 		if(command === 'add' && args.length > 0) {
-		
+			// eslint-disable-next-line no-var
 			var idx = -1;
 
 			if(message.member.roles.cache.some(role => role.name === 'Team 1')) {
@@ -112,6 +172,7 @@ client.on('message', message => {
 				idx = 12;
 			}
 			if(idx != -1) {
+				// console.log(parseFloat(args[0]));
 				if(parseFloat(args[0])) {
 					message.channel.send(`adding ${args[0]} to team number ${idx}`);
 
@@ -121,6 +182,8 @@ client.on('message', message => {
 		}
 
 		else if(command === 'show') {
+			// eslint-disable-next-line no-var
+			// message.channel.send(`Team 1: ${scores[0]}\nTeam 2: ${scores[1]}\nTeam 3: ${scores[2]}\nTeam 4: ${scores[3]}\nTeam 5: ${scores[4]}\nTeam 6: ${scores[5]}\nTeam 7: ${scores[6]}\nTeam 8: ${scores[7]}\n`);
 			const scoreboardEmbed = {
 				color: 0x00FF00,
 				title: 'Score Board',
@@ -212,14 +275,24 @@ client.on('message', message => {
 			.setColor('#123452')
 			.setTitle('Theres a pounce here');
 		message.channel.send(pounclocal);
-		const qmmap = message.guild.roles.cache.get('ROLE ID FOR THE QM ROLE').members.map(m => m.user);
+		// message.channel.send(message.guild.roles.cache.get('ROLE ID OF QM').members.first().user.toString());
+		const qmmap = message.guild.roles.cache.get('ROLE ID OF QM').members.map(m => m.user);
+		// eslint-disable-next-line no-var
 		var ps = ' ';
 		for(var i in qmmap) {
 			ps += qmmap[i].toString() + ' ';
 		}
 		message.channel.send(ps);
+		// const mention = args[0].mentions;
+		// if(mention == null) {
+		// 	return;
+		// }
+		// if(mention.roles.first().name != QM) {
+		// 	message.channel.send('Tagged role is not QM');
+		// }
 	}
-	
+
 });
 
+// login to Discord with your app's token
 client.login(token);

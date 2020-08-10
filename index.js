@@ -2,6 +2,7 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const { prefix, token, qachannel, bchannel, QM, sc } = require('./config.json');
 const { ADDRCONFIG } = require('dns');
+const { join } = require('path');
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
 client.on('ready', () => {
@@ -13,7 +14,23 @@ let qmuid = 0;
 var num = 1;
 // eslint-disable-next-line no-var
 var slides = {};
+var teams = [];
 var scores = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+function shuffle(array) {
+	var currentIndex = array.length, temporaryValue, randomIndex;
+	// While there remain elements to shuffle...
+	while (currentIndex !== 0) {
+		// Pick a remaining element...
+		randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex -= 1;
+		// And swap it with the current element.
+		temporaryValue = array[currentIndex];
+		array[currentIndex] = array[randomIndex];
+		array[randomIndex] = temporaryValue;
+	}
+	return array;
+}
+let join_flag = 1;
 client.on('message', message => {
 	if(message.author.id === qmuid && message.attachments.first()) {
 		console.log(message.channel.id);
@@ -43,6 +60,119 @@ client.on('message', message => {
 			.setImage('attachment://pong.png');
 		message.channel.send(pingembed);
 	}
+	else if(command === 'join' && args.length > 0) {
+		if(join_flag === 1) {
+			message.delete();
+			const role1 = message.guild.roles.cache.find(role => role.name === 'Team ' + args[0]);
+			const person = message.guild.member(message.author);
+			for(let i = 1;i <= 12 ; i++) {
+				if(person.roles.cache.some(role => role.name === 'Team ' + i)) {
+					const temp = message.guild.roles.cache.find(role => role.name === 'Team ' + i);
+					person.roles.remove(temp).catch(console.error);
+				}
+			}
+			person.roles.add(role1).catch(console.error);
+			message.channel.send('added ' + message.author.username + ' to team number ' + args[0]);
+		}
+		else{
+			message.delete();
+			message.channel.send('Teams frozen');
+		}
+	}
+	// for testing
+	// else if(command === 'purge' && args.length > 0) {
+	// 	message.channel.bulkDelete(1 + parseInt(args[0])).catch(console.error);
+	// }
+
+	else if(command === 'reax' && args.length > 0) {
+		message.channel.messages.fetch(args[0])
+			.then( message => {
+				const reaxmap = message.reactions.cache.array();
+				for(let i in reaxmap) {
+					if(reaxmap[i]._emoji.id) {
+						const emoji = message.guild.emojis.cache.get(reaxmap[i]._emoji.id);
+						reaxmap[i].users.fetch()
+							.then(users => {
+								const reaxlist = users.map(user => user.username);
+								message.channel.send(`People who reacted ${emoji} : ` + reaxlist.toString());
+							})
+							.catch(console.error);
+					}
+					else {
+						reaxmap[i].users.fetch()
+							.then(users => {
+								const reaxlist = users.map(user => user.username);
+								message.channel.send('People who reacted ' + reaxmap[i]._emoji.name + ' : ' + reaxlist.toString());
+							})
+							.catch(console.error);
+					}
+					// console.log(reaxmap[i]);
+				}
+			})
+			.catch(console.error);
+	}
+	else if(command === 'teamup' && args.length > 1) {
+		if(message.member.roles.cache.some(role => role.name === QM) || message.member.roles.cache.some(role => role.name === 'mods')) {
+			;
+		}
+		else {
+			message.channel.send('Not authorised');
+			return ;
+		}
+		console.log('hi');
+		teams = [];
+		for( let i = 0 ; i < parseInt(args[1]); i++) {
+			teams.push('');
+		}
+		let thumb = [];
+		let ques = [];
+		message.channel.messages.fetch(args[0])
+			.then(message => {
+				const reaxmap = message.reactions.cache.array();
+				for(let i in reaxmap) {
+					if(reaxmap[i]._emoji.name === '👍') {
+						reaxmap[i].users.fetch()
+							.then(users => {
+								const reaxlist = users.map(user => user.username);
+								for(let z in reaxlist) {
+									thumb.push(reaxlist[z]);
+								}
+								shuffle(thumb);
+								console.log(thumb);
+								for(let z = 0; z < reaxlist.length; z++) {
+									teams[z % args[1]] = teams[z % args[1]] + ', ' + thumb[z];
+								}
+								console.log(teams);
+							})
+							.catch(console.error);
+					}
+					else if(reaxmap[i]._emoji.name === '❔') {
+						reaxmap[i].users.fetch()
+							.then(users => {
+								const reaxlist = users.map(user => user.username);
+								for(let z in reaxlist) {
+									ques.push(reaxlist[z]);
+								}
+								shuffle(ques);
+								console.log(ques);
+								for(let z = reaxlist.length - 1; z >= 0; z--) {
+									teams[z % args[1]] = teams[z % args[1]] + ', ' + ques[z];
+								}
+								console.log(teams);
+							})
+							.catch(console.error);
+					}
+				}
+			})
+			.catch(console.error);
+	}
+	else if(command === 'showteams') {
+		let out = ' ,\n';
+		for(i = 1 ; i <= teams.length; i++) {
+			out += `Team ${i}:` + teams[i - 1] + '\n';
+		}
+		message.channel.send(out);
+	}
 	else if(command === 'identify' && message.member.roles.cache.some(role => role.name === QM)) {
 		qmuid = message.author.id;
 		message.channel.send('QM identified');
@@ -61,7 +191,8 @@ client.on('message', message => {
 			.setImage('attachment://Bhaibes_is_the_GOD.jpg');
 		message.channel.send(godembed);
 	}
-	else if(command === 'rules') {
+	else if(command === 'rules' || command === 'help') {
+		message.delete();
 		const ruleEmbed = {
 			color: 0x00FF00,
 			title: 'Rules/Commands',
@@ -82,7 +213,7 @@ client.on('message', message => {
 					inline: false,
 				},
 				{
-					name: '.pounce',
+					name: '.pounce or .p',
 					value: 'Tags all the qms for you, and also messages the bounce answers channel  USE THIS TO INDICATE POUNCES',
 					inline: false,
 				},
@@ -135,6 +266,46 @@ client.on('message', message => {
 				{
 					name: '.identify',
 					value: 'use this to make the bot dm you for uploading the slides',
+					inline: false,
+				},
+				{
+					name: '.join X',
+					value: 'join team X',
+					inline: false,
+				},
+				{
+					name: '.remove_team_roles',
+					value: 'removes the team roles from all server members, can only be called by the qm',
+					inline: false,
+				},
+				{
+					name: '.start_join',
+					value: 'QM needs to use this command to allow .join to work',
+					inline: false,
+				},
+				{
+					name: 'freeze_teams',
+					value: 'QM can use this to stop .join commands',
+					inline: false,
+				},
+				{
+					name: '.reax message_id',
+					value: 'gives the list of users who reacted on a message',
+					inline: false,
+				},
+				{
+					name: '.teamup message_id number_of_teams',
+					value: 'distributes people who reacted with 👍 and ❔ randomly into teams, can be used by qm and mods',
+					inline: false,
+				},
+				{
+					name: '.showteams',
+					value: 'displays the teams allocated, use it after .teamup, does NOT show people who have Team roles',
+					inline: false,
+				},
+				{
+					name: '.rules or .help',
+					value: 'displays this list',
 					inline: false,
 				},
 			],
@@ -225,32 +396,32 @@ client.on('message', message => {
 
 	// }
 	else if(message.channel.name === qachannel) {
-		if(command === 'nxts') {
-			if(message.member.roles.cache.some(role => role.name === QM)) {
-				message.delete();
-				const nxtsembed = new Discord.MessageEmbed()
-					.setTitle('Uploading Slide ' + num)
-					.setColor('#FF0000')
-					.attachFiles('./upload/Slide' + num + '.jpg')
-					.setImage('attachment://' + 'Slide' + num + '.jpg');
-				message.channel.send(nxtsembed);
-				for(i = 1; i <= 12; i++) {
-					const ch = message.client.channels.cache.find(channel => channel.name === 'team-'+i);
-					ch.send(nxtsembed);
-				}
-				num++;
-			}
-			else {
-				message.channel.send('You arent a QM');
-			}
-		}
+		// if(command === 'nxts') {
+		// 	if(message.member.roles.cache.some(role => role.name === QM)) {
+		// 		message.delete();
+		// 		const nxtsembed = new Discord.MessageEmbed()
+		// 			.setTitle('Uploading Slide ' + num)
+		// 			.setColor('#FF0000')
+		// 			.attachFiles('./upload/Slide' + num + '.jpg')
+		// 			.setImage('attachment://' + 'Slide' + num + '.jpg');
+		// 		message.channel.send(nxtsembed);
+		// 		for(i = 1; i <= 12; i++) {
+		// 			const ch = message.client.channels.cache.find(channel => channel.name === 'team-'+i);
+		// 			ch.send(nxtsembed);
+		// 		}
+		// 		num++;
+		// 	}
+		// 	else {
+		// 		message.channel.send('You arent a QM');
+		// 	}
+		// }
 		if(command === 'nxt') {
 			if(message.member.roles.cache.some(role => role.name === QM)) {
 				message.delete();
 				const nxtsembed = new Discord.MessageEmbed()
 					.setTitle('Uploading Slide ' + num)
 					.setColor('#FF0000')
-					.setImage(slides['Slide' + num+'.jpeg']);
+					.setImage(slides['Slide' + num + '.jpg']);
 				message.channel.send(nxtsembed);
 				// message.channel.send(slides['Slide1.JPG'])
 				for(i = 1; i <= 12; i++) {
@@ -303,6 +474,28 @@ client.on('message', message => {
 					.setTimestamp(new Date());
 				ch.send(pouncendEmbed);
 			}, parseFloat(args[0]) * 60000);
+		}
+		else if(command === 'start_join') {
+			message.delete();
+			message.channel.send('People can now join teams');
+			join_flag = 1;
+		}
+		else if(command === 'freeze_teams') {
+			message.delete();
+			message.channel.send('Teams frozen');
+			join_flag = 0;
+		}
+		else if(command === 'remove_team_roles') {
+			const memmap = message.guild.members.cache.map(member => member);
+			for(let j in memmap) {
+				for(let i = 1 ; i <= 12 ; i++) {
+					if(memmap[j].roles.cache.some(role => role.name === 'Team ' + i)) {
+						const temp = message.guild.roles.cache.find(role => role.name === 'Team ' + i);
+						memmap[j].roles.remove(temp).catch(console.error);
+					}
+				}
+			}
+			message.channel.send('Removed all teams');
 		}
 	}
 	else if(message.channel.name === bchannel) {
@@ -438,7 +631,7 @@ client.on('message', message => {
 		}
 	}
 
-	else if(command === 'pounce') {
+	else if(command === 'pounce' || command === 'p') {
 		const ch = message.client.channels.cache.find(channel => channel.name === bchannel);
 		const pounceEmbed = new Discord.MessageEmbed()
 			.setColor('#424242')
@@ -449,7 +642,7 @@ client.on('message', message => {
 			.setColor('#123452')
 			.setTitle('Theres a pounce here');
 		message.channel.send(pounclocal);
-		const qmmap = message.guild.roles.cache.get('ROLE ID OF QM').members.map(m => m.user);
+		const qmmap = message.guild.roles.cache.get('690122704107470901').members.map(m => m.user);
 		// eslint-disable-next-line no-var
 		var ps = ' ';
 		// eslint-disable-next-line no-var
